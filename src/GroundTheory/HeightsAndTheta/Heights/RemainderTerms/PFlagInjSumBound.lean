@@ -3,12 +3,9 @@ module
 public import GroundTheory.HeightsAndTheta.Heights.RemainderTerms.StatementsFlag
 
 @[expose] public section
-
 set_option maxSynthPendingDepth 1
 
-namespace GroundTheory.Heights₂.Heights
-
-namespace RestTerms
+namespace GroundTheory.Heights₂.Heights.RestTerms
 
 theorem FlagInjSumBound.finset_sum_bound (S : Finset ℕ) :
     ∑ i ∈ Finset.range S.card, i ≤ ∑ x ∈ S, x ∧
@@ -16,34 +13,22 @@ theorem FlagInjSumBound.finset_sum_bound (S : Finset ℕ) :
   induction S using Finset.induction_on_max with
   | empty => simp
   | insert m S' hlt ih =>
-    obtain ⟨ih₁, ih₂⟩ := ih
     have hm : m ∉ S' := fun h => lt_irrefl m (hlt m h)
-    have hsub : S' ⊆ Finset.range m := fun x hx => Finset.mem_range.2 (hlt x hx)
-    have hcard : S'.card ≤ m := by simpa using Finset.card_le_card hsub
     rw [Finset.card_insert_of_notMem hm, Finset.sum_range_succ, Finset.sum_insert hm]
-    refine ⟨by omega, fun heq => ?_⟩
-    have hmeq : m = S'.card := by omega
-    have hS' := ih₂ (by omega)
-    intro x hx
-    rcases Finset.mem_insert.1 hx with rfl | hx
-    · exact Finset.mem_range.2 (by omega)
-    · exact Finset.mem_range.2 (Nat.lt_succ_of_lt (Finset.mem_range.1 (hS' hx)))
+    obtain ⟨hs, _⟩ := ih
+    refine ⟨?_, fun heq x hx => Finset.mem_range.2 ?_⟩
+    · suffices S'.card ≤ m by omega
+      simpa using Finset.card_le_card (show S' ⊆ Finset.range m from fun x hx => Finset.mem_range.2 (hlt x hx))
+    · suffices x ≤ m by omega
+      rcases Finset.mem_insert.1 hx with rfl | hx
+      exacts [le_rfl, (hlt x hx).le]
 
 theorem FlagInjSumBound.proof : FlagInjSumBound.Statement := by
   intro N g hg
   classical
-  set S := Finset.univ.image g with hSdef
-  have hcard : S.card = N := by
-    rw [hSdef, Finset.card_image_of_injective _ hg, Finset.card_univ, Fintype.card_fin]
-  have hsum : ∑ i, g i = ∑ x ∈ S, x := by
-    rw [hSdef, Finset.sum_image (fun i _ j _ h => hg h)]
-  obtain ⟨h₁, h₂⟩ := FlagInjSumBound.finset_sum_bound S
-  rw [hcard, Finset.sum_range_id] at h₁ h₂
-  rw [hsum]
-  refine ⟨h₁, fun heq i => ?_⟩
-  have hi : g i ∈ S := Finset.mem_image_of_mem g (Finset.mem_univ i)
-  exact Finset.mem_range.1 (h₂ heq hi)
+  obtain ⟨hs, he⟩ := FlagInjSumBound.finset_sum_bound (Finset.univ.image g)
+  rw [Finset.card_image_of_injective _ hg, Finset.card_univ, Fintype.card_fin,
+    Finset.sum_range_id, Finset.sum_image (fun i _ j _ h => hg h)] at hs he
+  exact ⟨hs, fun h i => Finset.mem_range.1 (he h (Finset.mem_image_of_mem g (Finset.mem_univ i)))⟩
 
-end RestTerms
-
-end GroundTheory.Heights₂.Heights
+end GroundTheory.Heights₂.Heights.RestTerms
